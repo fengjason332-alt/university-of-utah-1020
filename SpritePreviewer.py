@@ -22,28 +22,75 @@ class SpritePreview(QMainWindow):
         self.setWindowTitle("Sprite Animation Preview")
         # This loads the provided sprite and would need to be changed for your own.
         self.num_frames = 21
-        self.frames = load_sprite('spriteImages',self.num_frames)
+        self.frames = load_sprite('spriteImages', self.num_frames)
 
-        # Add any other instance variables needed to track information as the program
-        # runs here
+        self.current_frame = 0
+        self.is_playing = False
+
+        self.timer = QTimer()
+        self.timer.timeout.connect(self.next_frame)
 
         # Make the GUI in the setupUI method
         self.setupUI()
 
-
     def setupUI(self):
         # An application needs a central widget - often a QFrame
         frame = QFrame()
+        main_layout = QVBoxLayout()
 
-        # Add a lot of code here to make layouts, more QFrame or QWidgets, and
-        # the other components of the program.
-        # Create needed connections between the UI components and slot methods
-        # you define in this class.
+        # Sprite image display
+        self.image_label = QLabel()
+        self.image_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.image_label.setPixmap(self.frames[self.current_frame])
+        main_layout.addWidget(self.image_label)
 
+        # FPS label
+        fps_label = QLabel("Frames per second")
+        fps_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        main_layout.addWidget(fps_label)
+
+        # FPS slider (1–100, with tick marks)
+        self.fps_slider = QSlider(Qt.Orientation.Horizontal)
+        self.fps_slider.setMinimum(1)
+        self.fps_slider.setMaximum(100)
+        self.fps_slider.setValue(10)
+        self.fps_slider.setTickPosition(QSlider.TickPosition.TicksBelow)
+        self.fps_slider.setTickInterval(10)
+        self.fps_slider.valueChanged.connect(self.on_fps_changed)
+        main_layout.addWidget(self.fps_slider)
+
+        # Current FPS value display
+        self.fps_value_label = QLabel(str(self.fps_slider.value()))
+        self.fps_value_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        main_layout.addWidget(self.fps_value_label)
+
+        # Start/Stop button
+        self.start_stop_button = QPushButton("Start")
+        self.start_stop_button.clicked.connect(self.toggle_animation)
+        main_layout.addWidget(self.start_stop_button)
+
+        frame.setLayout(main_layout)
         self.setCentralWidget(frame)
 
+    def on_fps_changed(self, value):
+        self.fps_value_label.setText(str(value))
+        if self.is_playing:
+            self.timer.setInterval(1000 // value)
 
-    # You will need methods in the class to act as slots to connect to signals
+    def toggle_animation(self):
+        if self.is_playing:
+            self.timer.stop()
+            self.is_playing = False
+            self.start_stop_button.setText("Start")
+        else:
+            fps = self.fps_slider.value()
+            self.timer.start(1000 // fps)
+            self.is_playing = True
+            self.start_stop_button.setText("Stop")
+
+    def next_frame(self):
+        self.current_frame = (self.current_frame + 1) % self.num_frames
+        self.image_label.setPixmap(self.frames[self.current_frame])
 
 
 def main():
